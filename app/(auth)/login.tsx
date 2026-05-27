@@ -95,10 +95,6 @@ export default function LoginScreen() {
               size="lg"
               style={styles.loginBtn}
             />
-
-            <TouchableOpacity style={styles.forgotBtn}>
-              <Text style={styles.forgotText}>Esqueceu sua senha?</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Footer */}
@@ -144,8 +140,6 @@ const styles = StyleSheet.create({
   mockHint: { fontSize: FONTS.size.xs, color: COLORS.primary, marginTop: -SPACING.lg, marginBottom: SPACING.lg },
   inputSpacing: { marginBottom: SPACING.base },
   loginBtn: { marginTop: SPACING.lg },
-  forgotBtn: { alignItems: 'center', marginTop: SPACING.md },
-  forgotText: { color: COLORS.primary, fontSize: FONTS.size.sm, fontWeight: '500' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl },
   footerText: { color: COLORS.textSecondary, fontSize: FONTS.size.base },
   footerLink: { color: COLORS.primary, fontWeight: '700', fontSize: FONTS.size.base },

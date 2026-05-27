@@ -3,8 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,50 +45,47 @@ export default function CategoriesScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Categorias</Text>
-      </View>
-
-      {/* Income */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionDot, { backgroundColor: COLORS.income }]} />
-          <Text style={styles.sectionTitle}>Receitas ({incomeCategories.length})</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Categorias</Text>
         </View>
-        <FlatList
-          data={incomeCategories}
-          keyExtractor={(i) => i.id.toString()}
-          renderItem={renderCategory}
-          scrollEnabled={false}
-        />
-      </View>
 
-      {/* Expense */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionDot, { backgroundColor: COLORS.expense }]} />
-          <Text style={styles.sectionTitle}>Despesas ({expenseCategories.length})</Text>
+        {/* Income */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionDot, { backgroundColor: COLORS.income }]} />
+            <Text style={styles.sectionTitle}>Receitas ({incomeCategories.length})</Text>
+          </View>
+          {incomeCategories.map((category) => (
+            <View key={category.id}>{renderCategory({ item: category })}</View>
+          ))}
         </View>
-        <FlatList
-          data={expenseCategories}
-          keyExtractor={(i) => i.id.toString()}
-          renderItem={renderCategory}
-          scrollEnabled={false}
-        />
-      </View>
 
-      {categories.length === 0 && (
-        <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🗂️</Text>
-          <Text style={styles.emptyText}>Nenhuma categoria disponível</Text>
+        {/* Expense */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionDot, { backgroundColor: COLORS.expense }]} />
+            <Text style={styles.sectionTitle}>Despesas ({expenseCategories.length})</Text>
+          </View>
+          {expenseCategories.map((category) => (
+            <View key={category.id}>{renderCategory({ item: category })}</View>
+          ))}
         </View>
-      )}
+
+        {categories.length === 0 && (
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>🗂️</Text>
+            <Text style={styles.emptyText}>Nenhuma categoria disponível</Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  content: { paddingBottom: SPACING['2xl'] },
   header: { padding: SPACING.base, paddingTop: SPACING.md },
   title: { fontSize: FONTS.size['2xl'], fontWeight: '800', color: COLORS.text },
   section: { paddingHorizontal: SPACING.base, marginBottom: SPACING.lg },

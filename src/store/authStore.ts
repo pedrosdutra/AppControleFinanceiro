@@ -3,6 +3,12 @@ import { User } from '../types';
 import { authApi } from '../services/api';
 import { tokenStorage } from '../services/tokenStorage';
 
+const logAuthBootstrap = (...messages: unknown[]) => {
+  if (__DEV__) {
+    console.log('[auth-bootstrap]', ...messages);
+  }
+};
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -27,17 +33,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   loadToken: async () => {
+    logAuthBootstrap('loadToken:start');
+
     try {
       const token = await tokenStorage.getToken();
-      if (token) {
-        const user = await authApi.me();
-        set({ token, user, isAuthenticated: true, isHydrated: true });
+      logAuthBootstrap('loadToken:token-read', token ? 'present' : 'missing');
+
+      if (!token) {
+        logAuthBootstrap('loadToken:no-token -> unauthenticated');
+        set({ token: null, user: null, isAuthenticated: false, isHydrated: true });
         return;
       }
+
+      // Do not block the first render on session validation; Expo Go can stall here.
+      logAuthBootstrap('loadToken:optimistic-auth');
+      set({ token, user: null, isAuthenticated: true, isHydrated: true });
+
+      try {
+        logAuthBootstrap('loadToken:me:start');
+        const user = await authApi.me();
+        logAuthBootstrap('loadToken:me:success', user.email);
+        set({ token, user, isAuthenticated: true, isHydrated: true });
+      } catch {
+        logAuthBootstrap('loadToken:me:failed -> clearToken');
+        await tokenStorage.clearToken();
+        set({ token: null, user: null, isAuthenticated: false, isHydrated: true });
+      }
+
+      return;
     } catch {
+      logAuthBootstrap('loadToken:failed -> clearToken');
       await tokenStorage.clearToken();
     }
 
+    logAuthBootstrap('loadToken:fallback-unauthenticated');
     set({ token: null, user: null, isAuthenticated: false, isHydrated: true });
   },
 

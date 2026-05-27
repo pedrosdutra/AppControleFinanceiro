@@ -25,10 +25,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inTabsGroup = segments[0] === '(tabs)';
+    const inTransactionRoute = segments[0] === 'transaction';
+    const atRoot = !segments[0];
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuthGroup) {
+    } else if (isAuthenticated && (inAuthGroup || atRoot || (!inTabsGroup && !inTransactionRoute))) {
       router.replace('/(tabs)/home');
     }
   }, [isAuthenticated, isHydrated, rootNavigationState?.key, router, segments]);
