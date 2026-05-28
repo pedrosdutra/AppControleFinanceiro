@@ -37,15 +37,15 @@ export const FONTS = {
   medium: 'System',
   bold: 'System',
   size: {
-    xs: 10,
-    sm: 12,
-    base: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    '2xl': 24,
-    '3xl': 30,
-    '4xl': 36,
+    xs: 11,
+    sm: 13,
+    base: 15,
+    md: 17,
+    lg: 19,
+    xl: 22,
+    '2xl': 26,
+    '3xl': 32,
+    '4xl': 38,
   },
 };
 
@@ -92,9 +92,6 @@ export const SHADOWS = {
     elevation: 10,
   },
 };
-
-// Mock API base URL - replace with your actual backend URL
-export const API_BASE_URL = 'https://financeiro-api.example.com/api';
 
 export const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',

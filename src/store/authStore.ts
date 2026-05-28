@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { User } from '../types';
 import { authApi } from '../services/api';
-import { tokenStorage } from '../services/tokenStorage';
 
 const logAuthBootstrap = (...messages: unknown[]) => {
   if (__DEV__) {
@@ -18,7 +17,12 @@ interface AuthState {
   error: string | null;
 
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    passwordConfirmation: string,
+  ) => Promise<{ requiresEmailConfirmation: boolean } | null>;
   logout: () => Promise<void>;
   loadToken: () => Promise<void>;
   clearError: () => void;
@@ -36,7 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     logAuthBootstrap('loadToken:start');
 
     try {
-      const token = await tokenStorage.getToken();
+      const token = await authApi.getSessionToken();
       logAuthBootstrap('loadToken:token-read', token ? 'present' : 'missing');
 
       if (!token) {
@@ -55,15 +59,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         logAuthBootstrap('loadToken:me:success', user.email);
         set({ token, user, isAuthenticated: true, isHydrated: true });
       } catch {
-        logAuthBootstrap('loadToken:me:failed -> clearToken');
-        await tokenStorage.clearToken();
+        logAuthBootstrap('loadToken:me:failed -> signOut');
+        await authApi.logout();
         set({ token: null, user: null, isAuthenticated: false, isHydrated: true });
       }
 
       return;
     } catch {
-      logAuthBootstrap('loadToken:failed -> clearToken');
-      await tokenStorage.clearToken();
+      logAuthBootstrap('loadToken:failed -> signOut');
+      try {
+        await authApi.logout();
+      } catch {}
     }
 
     logAuthBootstrap('loadToken:fallback-unauthenticated');
@@ -74,10 +80,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { user, token } = await authApi.login({ email, password });
-      await tokenStorage.setToken(token);
       set({ user, token, isAuthenticated: true, isLoading: false, isHydrated: true });
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.';
+    } catch (err: unknown) {
+      const message = err instanceof Error
+        ? err.message
+        : 'Erro ao fazer login. Verifique suas credenciais.';
       set({ error: message, isLoading: false });
     }
   },
@@ -88,11 +95,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user, token } = await authApi.register({
         name, email, password, password_confirmation: passwordConfirmation,
       });
-      await tokenStorage.setToken(token);
-      set({ user, token, isAuthenticated: true, isLoading: false, isHydrated: true });
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Erro ao criar conta. Tente novamente.';
+
+      if (!user || !token) {
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+          isHydrated: true,
+        });
+        return { requiresEmailConfirmation: true };
+      }
+
+      try {
+        await authApi.logout();
+      } catch {}
+
+      set({ user: null, token: null, isAuthenticated: false, isLoading: false, isHydrated: true });
+      return { requiresEmailConfirmation: false };
+    } catch (err: unknown) {
+      const message = err instanceof Error
+        ? err.message
+        : 'Erro ao criar conta. Tente novamente.';
       set({ error: message, isLoading: false });
+      return null;
     }
   },
 
@@ -100,7 +126,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await authApi.logout();
     } catch {}
-    await tokenStorage.clearToken();
     set({ user: null, token: null, isAuthenticated: false, isHydrated: true });
   },
 

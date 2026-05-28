@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFinanceStore } from '../../src/store/financeStore';
 import { TransactionCard } from '../../src/components/TransactionCard';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/constants';
+import { EntityId } from '../../src/types';
 
 const FILTERS = [
   { key: 'all', label: 'Todas' },
@@ -36,7 +37,7 @@ export default function TransactionsScreen() {
     fetchTransactions();
   }, []);
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: EntityId) => {
     Alert.alert(
       'Excluir Transação',
       'Tem certeza que deseja excluir esta transação?',
@@ -77,7 +78,7 @@ export default function TransactionsScreen() {
 
       <FlatList
         data={transactions}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchTransactions} tintColor={COLORS.primary} />}
         renderItem={({ item }) => (

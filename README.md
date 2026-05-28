@@ -1,17 +1,17 @@
 # 💰 AppControleFinanceiro
 
-Aplicativo de Controle Financeiro pessoal construído com **React Native + Expo**.
+Aplicativo de controle financeiro pessoal construído com **React Native + Expo**, usando **Supabase** para autenticação e banco de dados.
 
 ## 🚀 Tecnologias
 
 | Tecnologia | Finalidade |
 |---|---|
-| Expo SDK 52 | Framework mobile |
-| Expo Router 4 | Navegação por sistema de arquivos |
+| Expo SDK 54 | Framework mobile |
+| Expo Router 6 | Navegação por sistema de arquivos |
+| Supabase | Auth, Postgres, RLS e persistência |
 | Zustand | Gerenciamento de estado global |
-| Axios | Requisições HTTP / integração com back-end |
 | TypeScript | Tipagem estática |
-| expo-secure-store | Armazenamento seguro do token JWT |
+| react-native-url-polyfill | Compatibilidade do client Supabase no Expo |
 | @expo/vector-icons | Ícones (Ionicons) |
 
 ## 📱 Telas
@@ -50,7 +50,8 @@ src/
 │   ├── authStore.ts     # Zustand: auth, login, logout, signup
 │   └── financeStore.ts  # Zustand: transações, categorias, resumo
 ├── services/
-│   └── api.ts           # Axios + interceptors JWT
+│   ├── api.ts           # Camada de acesso ao Supabase
+│   └── supabase.ts      # Client Supabase + persistência de sessão
 ├── types/
 │   └── index.ts
 ├── constants/
@@ -66,34 +67,32 @@ src/
 
 ## ⚙️ Configuração
 
-1. **Configure a URL do back-end** em `src/constants/index.ts`:
-   ```ts
-   export const API_BASE_URL = 'https://SUA-API.com/api';
+1. **Crie seu arquivo `.env`** com base no `.env.example`:
+   ```bash
+   EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
    ```
 
 2. **Instale as dependências:**
    ```bash
-   npm install --legacy-peer-deps
+   npm install
    ```
 
 3. **Rode o app:**
    ```bash
-   npx expo start
+   npx expo start --clear --lan --port 8082
    ```
 
-## 🔗 Back-end esperado (endpoints)
+4. **Aplique o schema no Supabase:**
+   use o arquivo [supabase/migrations/001_initial_schema.sql](supabase/migrations/001_initial_schema.sql) no SQL Editor ou via Supabase CLI.
 
-| Método | Rota | Descrição |
+## 🗄️ Modelo de dados no Supabase
+
+| Tabela | Finalidade |
 |---|---|---|
-| POST | `/auth/login` | Login |
-| POST | `/auth/register` | Registro |
-| POST | `/auth/logout` | Logout |
-| GET | `/auth/me` | Usuário autenticado |
-| GET | `/transactions` | Lista (params: month, year, type) |
-| GET | `/transactions/:id` | Detalhe |
-| POST | `/transactions` | Criar |
-| PUT | `/transactions/:id` | Editar |
-| DELETE | `/transactions/:id` | Excluir |
-| GET | `/categories` | Listar categorias |
-| GET | `/summary` | Resumo financeiro (params: month, year) |
+| `profiles` | Dados públicos do usuário autenticado |
+| `categories` | Categorias padrão e categorias do usuário |
+| `transactions` | Receitas e despesas vinculadas ao usuário |
+
+O schema também inclui enums, trigger de `updated_at`, trigger para criação automática de perfil, categorias seed e políticas de RLS.
 

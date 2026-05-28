@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Transaction, Category, FinancialSummary, CreateTransactionPayload, UpdateTransactionPayload } from '../types';
+import { Transaction, Category, FinancialSummary, CreateTransactionPayload, UpdateTransactionPayload, EntityId } from '../types';
 import { transactionsApi, categoriesApi, summaryApi } from '../services/api';
 
 interface FinanceState {
@@ -17,8 +17,8 @@ interface FinanceState {
   fetchCategories: () => Promise<void>;
   fetchSummary: () => Promise<void>;
   createTransaction: (payload: CreateTransactionPayload) => Promise<void>;
-  updateTransaction: (id: number, payload: UpdateTransactionPayload) => Promise<void>;
-  deleteTransaction: (id: number) => Promise<void>;
+  updateTransaction: (id: EntityId, payload: UpdateTransactionPayload) => Promise<void>;
+  deleteTransaction: (id: EntityId) => Promise<void>;
   setMonth: (month: number, year: number) => void;
   setFilterType: (type: 'all' | 'income' | 'expense') => void;
   clearError: () => void;

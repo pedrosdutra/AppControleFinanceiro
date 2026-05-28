@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Image,
   TouchableOpacity,
   Linking,
 } from 'react-native';
@@ -13,14 +14,15 @@ import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/constants';
 
 const TECH_STACK = [
   { name: 'React Native', icon: 'logo-react', color: '#61DAFB' },
+  { name: 'Expo', icon: 'phone-portrait', color: '#FFFFFF' },
   { name: 'Expo Router', icon: 'navigate', color: '#000020' },
+  { name: 'Supabase', image: require('../../assets/supabase.png') },
   { name: 'Zustand', icon: 'layers', color: '#764ABC' },
   { name: 'TypeScript', icon: 'code-slash', color: '#3178C6' },
-  { name: 'Axios', icon: 'cloud', color: '#5A29E4' },
 ];
 
 const FEATURES = [
-  { icon: 'shield-checkmark', title: 'Autenticação Segura', desc: 'Login e cadastro com JWT.' },
+  { icon: 'shield-checkmark', title: 'Autenticação Segura', desc: 'Login e cadastro com Supabase Auth.' },
   { icon: 'bar-chart', title: 'Resumo Financeiro', desc: 'Visão consolidada de receitas e despesas.' },
   { icon: 'swap-vertical', title: 'CRUD Transações', desc: 'Crie, edite e exclua lançamentos financeiros.' },
   { icon: 'grid', title: 'Categorias', desc: 'Organize suas transações por categoria.' },
@@ -66,7 +68,11 @@ export default function AboutScreen() {
           <View style={styles.techGrid}>
             {TECH_STACK.map((t, i) => (
               <View key={i} style={styles.techBadge}>
-                <Ionicons name={t.icon as any} size={18} color={t.color} />
+                {t.image ? (
+                  <Image source={t.image} style={styles.techImage} resizeMode="contain" />
+                ) : (
+                  <Ionicons name={t.icon as any} size={18} color={t.color} />
+                )}
                 <Text style={styles.techName}>{t.name}</Text>
               </View>
             ))}
@@ -75,8 +81,8 @@ export default function AboutScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Feito com ❤️ para a disciplina de Desenvolvimento Mobile</Text>
-          <Text style={styles.footerYear}>© 2025 – AppControleFinanceiro</Text>
+          <Text style={styles.footerText}>Feito para a disciplina de controle financeiro.</Text>
+          <Text style={styles.footerYear}>© 2026 – AppControleFinanceiro</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -147,6 +153,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     ...SHADOWS.sm,
   },
+  techImage: { width: 18, height: 18 },
   techName: { fontSize: FONTS.size.sm, fontWeight: '600', color: COLORS.text },
   footer: { alignItems: 'center', padding: SPACING.xl, paddingBottom: SPACING['2xl'] },
   footerText: { fontSize: FONTS.size.sm, color: COLORS.textSecondary, textAlign: 'center' },

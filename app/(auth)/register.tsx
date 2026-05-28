@@ -42,14 +42,29 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     if (!validate()) return;
     clearError();
-    await register(name.trim(), email.trim(), password, passwordConfirmation);
+    const result = await register(name.trim(), email.trim(), password, passwordConfirmation);
+
+    if (!result) {
+      return;
+    }
+
+    if (result.requiresEmailConfirmation) {
+      Alert.alert(
+        'Conta criada',
+        'Seu cadastro foi criado. Confirme o e-mail enviado pelo Supabase antes de entrar.',
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+      );
+      return;
+    }
+
+    router.replace('/(auth)/login');
   };
 
   React.useEffect(() => {
-    if (error) {
+    if (error && Platform.OS !== 'web') {
       Alert.alert('Erro', error, [{ text: 'OK', onPress: clearError }]);
     }
-  }, [error]);
+  }, [clearError, error]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -66,6 +81,13 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.card}>
+            {error ? (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorBannerTitle}>Falha no cadastro</Text>
+                <Text style={styles.errorBannerText}>{error}</Text>
+              </View>
+            ) : null}
+
             <Input
               label="Nome Completo"
               placeholder="Seu nome"
@@ -147,6 +169,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.md,
+  },
+  errorBanner: {
+    backgroundColor: COLORS.dangerLight,
+    borderWidth: 1,
+    borderColor: COLORS.danger,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.base,
+  },
+  errorBannerTitle: {
+    color: COLORS.danger,
+    fontSize: FONTS.size.sm,
+    fontWeight: '700',
+    marginBottom: SPACING.xs,
+  },
+  errorBannerText: {
+    color: COLORS.text,
+    fontSize: FONTS.size.sm,
+    lineHeight: 20,
   },
   btn: { marginTop: SPACING.base },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl },

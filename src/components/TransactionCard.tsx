@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Transaction } from '../types';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../constants';
+import { formatIsoDateToDisplay } from '../utils/date';
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -13,10 +14,7 @@ interface TransactionCardProps {
 const formatCurrency = (value: number) =>
   `R$ ${value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 
-const formatDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-};
+const formatDate = (dateStr: string) => formatIsoDateToDisplay(dateStr);
 
 export const TransactionCard: React.FC<TransactionCardProps> = ({
   transaction,

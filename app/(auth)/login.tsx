@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -21,8 +20,8 @@ export default function LoginScreen() {
   const router = useRouter();
   const { login, isLoading, error, clearError } = useAuthStore();
 
-  const [email, setEmail] = useState('ogpedros123@hotmail.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validate = () => {
@@ -42,10 +41,10 @@ export default function LoginScreen() {
   };
 
   React.useEffect(() => {
-    if (error) {
+    if (error && Platform.OS !== 'web') {
       Alert.alert('Erro', error, [{ text: 'OK', onPress: clearError }]);
     }
-  }, [error]);
+  }, [clearError, error]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -64,7 +63,13 @@ export default function LoginScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Bem-vindo de volta!</Text>
             <Text style={styles.cardSubtitle}>Faça login para continuar</Text>
-            <Text style={styles.mockHint}>Mock: ogpedros123@hotmail.com / 123456</Text>
+
+            {error ? (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorBannerTitle}>Falha no login</Text>
+                <Text style={styles.errorBannerText}>{error}</Text>
+              </View>
+            ) : null}
 
             <Input
               label="E-mail"
@@ -138,6 +143,25 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: FONTS.size.xl, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
   cardSubtitle: { fontSize: FONTS.size.sm, color: COLORS.textSecondary, marginBottom: SPACING['2xl'] },
   mockHint: { fontSize: FONTS.size.xs, color: COLORS.primary, marginTop: -SPACING.lg, marginBottom: SPACING.lg },
+  errorBanner: {
+    backgroundColor: COLORS.dangerLight,
+    borderWidth: 1,
+    borderColor: COLORS.danger,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.base,
+  },
+  errorBannerTitle: {
+    color: COLORS.danger,
+    fontSize: FONTS.size.sm,
+    fontWeight: '700',
+    marginBottom: SPACING.xs,
+  },
+  errorBannerText: {
+    color: COLORS.text,
+    fontSize: FONTS.size.sm,
+    lineHeight: 20,
+  },
   inputSpacing: { marginBottom: SPACING.base },
   loginBtn: { marginTop: SPACING.lg },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl },

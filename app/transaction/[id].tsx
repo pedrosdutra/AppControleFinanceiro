@@ -16,14 +16,12 @@ import { Button } from '../../src/components/ui/Button';
 import { Card } from '../../src/components/ui/Card';
 import { useFinanceStore } from '../../src/store/financeStore';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/constants';
+import { formatIsoDateToDisplay } from '../../src/utils/date';
 
 const formatCurrency = (value: number) =>
   `R$ ${value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 
-const formatDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-};
+const formatDate = (dateStr: string) => formatIsoDateToDisplay(dateStr);
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,7 +32,7 @@ export default function TransactionDetailScreen() {
 
   useEffect(() => {
     if (id) {
-      transactionsApi.getById(Number(id))
+      transactionsApi.getById(id)
         .then(setTransaction)
         .catch(() => Alert.alert('Erro', 'Transação não encontrada.'))
         .finally(() => setLoading(false));
@@ -51,7 +49,7 @@ export default function TransactionDetailScreen() {
           text: 'Excluir',
           style: 'destructive',
           onPress: async () => {
-            await deleteTransaction(Number(id));
+            await deleteTransaction(id);
             router.back();
           },
         },

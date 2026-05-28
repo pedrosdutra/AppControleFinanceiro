@@ -16,7 +16,8 @@ import { useFinanceStore } from '../../src/store/financeStore';
 import { Button } from '../../src/components/ui/Button';
 import { Input } from '../../src/components/ui/Input';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/constants';
-import { TransactionType } from '../../src/types';
+import { EntityId, TransactionType } from '../../src/types';
+import { formatIsoDateToDisplay, maskDateInput, parseDisplayDateToIso } from '../../src/utils/date';
 
 export default function NewTransactionScreen() {
   const router = useRouter();
@@ -28,8 +29,8 @@ export default function NewTransactionScreen() {
   );
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [categoryId, setCategoryId] = useState<EntityId | null>(null);
+  const [date, setDate] = useState(formatIsoDateToDisplay(new Date().toISOString().split('T')[0]));
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -50,19 +51,28 @@ export default function NewTransactionScreen() {
     }
     if (!categoryId) e.category = 'Selecione uma categoria';
     if (!date) e.date = 'Data é obrigatória';
+    else if (!parseDisplayDateToIso(date)) e.date = 'Use o formato dd/mm/aaaa';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
+
+    const normalizedDate = parseDisplayDateToIso(date);
+
+    if (!normalizedDate) {
+      setErrors((currentErrors) => ({ ...currentErrors, date: 'Use o formato dd/mm/aaaa' }));
+      return;
+    }
+
     try {
       await createTransaction({
         title: title.trim(),
         amount: Number(amount.replace(',', '.')),
         type: transactionType,
         category_id: categoryId!,
-        date,
+        date: normalizedDate,
         notes: notes.trim() || undefined,
       });
       Alert.alert('Sucesso', 'Transação criada com sucesso!', [
@@ -117,10 +127,12 @@ export default function NewTransactionScreen() {
 
           <Input
             label="Data"
-            placeholder="AAAA-MM-DD"
+            placeholder="dd/mm/aaaa"
             value={date}
-            onChangeText={setDate}
+            onChangeText={(value) => setDate(maskDateInput(value))}
             leftIcon="calendar"
+            keyboardType="number-pad"
+            maxLength={10}
             error={errors.date}
           />
 
