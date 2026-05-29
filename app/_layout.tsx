@@ -94,6 +94,19 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: COLORS.background },
               }}
             />
+            <Stack.Screen
+              name="transaction/edit/[id]"
+              options={{
+                headerShown: true,
+                title: 'Editar Transação',
+                headerBackTitle: 'Voltar',
+                headerStyle: { backgroundColor: COLORS.surface },
+                headerTintColor: COLORS.text,
+                headerTitleStyle: { color: COLORS.text },
+                headerShadowVisible: false,
+                contentStyle: { backgroundColor: COLORS.background },
+              }}
+            />
           </Stack>
         </AuthGate>
         <StatusBar style="light" />

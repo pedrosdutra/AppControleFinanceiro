@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { transactionsApi } from '../../src/services/api';
@@ -30,14 +30,40 @@ export default function TransactionDetailScreen() {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      transactionsApi.getById(id)
-        .then(setTransaction)
-        .catch(() => Alert.alert('Erro', 'Transação não encontrada.'))
-        .finally(() => setLoading(false));
+  const loadTransaction = useCallback(() => {
+    if (!id) {
+      setTransaction(null);
+      setLoading(false);
+      return undefined;
     }
+
+    let isActive = true;
+    setLoading(true);
+
+    transactionsApi.getById(id)
+      .then((data) => {
+        if (isActive) {
+          setTransaction(data);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setTransaction(null);
+          Alert.alert('Erro', 'Transação não encontrada.');
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [id]);
+
+  useFocusEffect(loadTransaction);
 
   const handleDelete = () => {
     Alert.alert(

@@ -8,56 +8,122 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useFinanceStore } from '../../src/store/financeStore';
-import { Button } from '../../src/components/ui/Button';
-import { Input } from '../../src/components/ui/Input';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/constants';
-import { EntityId, TransactionType } from '../../src/types';
-import { formatIsoDateToDisplay, maskDateInput, parseDisplayDateToIso } from '../../src/utils/date';
+import { transactionsApi } from '../../../src/services/api';
+import { useFinanceStore } from '../../../src/store/financeStore';
+import { Button } from '../../../src/components/ui/Button';
+import { Input } from '../../../src/components/ui/Input';
+import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../../src/constants';
+import { EntityId, TransactionType } from '../../../src/types';
+import { formatIsoDateToDisplay, maskDateInput, parseDisplayDateToIso } from '../../../src/utils/date';
 
-export default function NewTransactionScreen() {
+export default function EditTransactionScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { type: typeParam } = useLocalSearchParams<{ type?: string }>();
-  const { categories, createTransaction, isSubmitting, fetchCategories } = useFinanceStore();
+  const { categories, fetchCategories, updateTransaction, isSubmitting } = useFinanceStore();
 
-  const [transactionType, setTransactionType] = useState<TransactionType>(
-    typeParam === 'income' ? 'income' : 'expense'
-  );
+  const [isLoadingTransaction, setIsLoadingTransaction] = useState(true);
+  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<EntityId | null>(null);
-  const [date, setDate] = useState(formatIsoDateToDisplay(new Date().toISOString().split('T')[0]));
+  const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    if (!id) {
+      setIsLoadingTransaction(false);
+      Alert.alert('Erro', 'Transação não encontrada.', [{ text: 'OK', onPress: () => router.back() }]);
+      return;
+    }
+
+    let isActive = true;
+    setIsLoadingTransaction(true);
+
+    transactionsApi.getById(id)
+      .then((transaction) => {
+        if (!isActive) {
+          return;
+        }
+
+        setTransactionType(transaction.type);
+        setTitle(transaction.title);
+        setAmount(transaction.amount.toFixed(2).replace('.', ','));
+        setCategoryId(transaction.category_id);
+        setDate(formatIsoDateToDisplay(transaction.date));
+        setNotes(transaction.notes ?? '');
+      })
+      .catch(() => {
+        if (isActive) {
+          Alert.alert('Erro', 'Transação não encontrada.', [{ text: 'OK', onPress: () => router.back() }]);
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoadingTransaction(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [id, router]);
 
   const filteredCategories = categories.filter(
-    (c) => c.type === transactionType || c.type === 'both'
+    (category) => category.type === transactionType || category.type === 'both'
   );
 
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!title.trim()) e.title = 'Título é obrigatório';
-    if (!amount) e.amount = 'Valor é obrigatório';
-    else if (isNaN(Number(amount.replace(',', '.'))) || Number(amount.replace(',', '.')) <= 0) {
-      e.amount = 'Valor inválido';
+  useEffect(() => {
+    if (!categoryId || categories.length === 0) {
+      return;
     }
-    if (!categoryId) e.category = 'Selecione uma categoria';
-    if (!date) e.date = 'Data é obrigatória';
-    else if (!parseDisplayDateToIso(date)) e.date = 'Use o formato dd/mm/aaaa';
-    setErrors(e);
-    return Object.keys(e).length === 0;
+
+    const hasValidCategory = categories.some(
+      (category) => category.id === categoryId
+        && (category.type === transactionType || category.type === 'both')
+    );
+
+    if (!hasValidCategory) {
+      setCategoryId(null);
+    }
+  }, [categories, categoryId, transactionType]);
+
+  const validate = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!title.trim()) nextErrors.title = 'Título é obrigatório';
+
+    if (!amount) {
+      nextErrors.amount = 'Valor é obrigatório';
+    } else if (Number.isNaN(Number(amount.replace(',', '.'))) || Number(amount.replace(',', '.')) <= 0) {
+      nextErrors.amount = 'Valor inválido';
+    }
+
+    if (!categoryId) nextErrors.category = 'Selecione uma categoria';
+
+    if (!date) {
+      nextErrors.date = 'Data é obrigatória';
+    } else if (!parseDisplayDateToIso(date)) {
+      nextErrors.date = 'Use o formato dd/mm/aaaa';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!id || !validate()) {
+      return;
+    }
 
     const normalizedDate = parseDisplayDateToIso(date);
 
@@ -67,7 +133,7 @@ export default function NewTransactionScreen() {
     }
 
     try {
-      await createTransaction({
+      await updateTransaction(id, {
         title: title.trim(),
         amount: Number(amount.replace(',', '.')),
         type: transactionType,
@@ -81,20 +147,26 @@ export default function NewTransactionScreen() {
         return;
       }
 
-      Alert.alert('Sucesso', 'Transação criada com sucesso!', [
+      Alert.alert('Sucesso', 'Transação atualizada com sucesso!', [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch {
-      Alert.alert('Erro', 'Não foi possível criar a transação.');
+      Alert.alert('Erro', 'Não foi possível atualizar a transação.');
     }
   };
+
+  if (isLoadingTransaction) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ActivityIndicator style={{ flex: 1 }} color={COLORS.primary} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          
-          {/* Type Toggle */}
           <View style={styles.typeToggle}>
             <TouchableOpacity
               style={[styles.typeBtn, transactionType === 'income' && styles.typeBtnActiveIncome]}
@@ -142,22 +214,28 @@ export default function NewTransactionScreen() {
             error={errors.date}
           />
 
-          {/* Category Picker */}
           <View style={styles.categorySection}>
             <Text style={styles.categoryLabel}>Categoria</Text>
             <View style={styles.categoryGrid}>
-              {filteredCategories.map((cat) => (
+              {filteredCategories.map((category) => (
                 <TouchableOpacity
-                  key={cat.id}
+                  key={category.id}
                   style={[
                     styles.categoryChip,
-                    categoryId === cat.id && { backgroundColor: cat.color, borderColor: cat.color },
+                    categoryId === category.id && {
+                      backgroundColor: category.color,
+                      borderColor: category.color,
+                    },
                   ]}
-                  onPress={() => setCategoryId(cat.id)}
+                  onPress={() => setCategoryId(category.id)}
                 >
-                  <Ionicons name={cat.icon as any} size={16} color={categoryId === cat.id ? COLORS.white : cat.color} />
-                  <Text style={[styles.chipText, categoryId === cat.id && { color: COLORS.white }]}>
-                    {cat.name}
+                  <Ionicons
+                    name={category.icon as any}
+                    size={16}
+                    color={categoryId === category.id ? COLORS.white : category.color}
+                  />
+                  <Text style={[styles.chipText, categoryId === category.id && { color: COLORS.white }]}>
+                    {category.name}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -177,7 +255,7 @@ export default function NewTransactionScreen() {
           />
 
           <Button
-            title="Salvar Transação"
+            title="Salvar Alterações"
             onPress={handleSubmit}
             loading={isSubmitting}
             fullWidth
