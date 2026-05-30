@@ -25,7 +25,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single-page",
+      "output": "single",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
@@ -40,6 +40,12 @@
         "projectId": "424fac9d-d976-48e0-8d4d-8bff72c68847"
       }
     },
-    "owner": "c3webmobile2026.1"
+    "owner": "c3webmobile2026.1",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/424fac9d-d976-48e0-8d4d-8bff72c68847"
+    }
   }
 }
